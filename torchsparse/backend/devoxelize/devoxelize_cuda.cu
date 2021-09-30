@@ -5,6 +5,11 @@
 
 #include <THC/THCAtomics.cuh>
 
+
+#define THREADS_PER_BLOCK 512
+#define DIVUP(m, n) ((m) / (n) + ((m) % (n) > 0))
+
+
 // input features (n, c), indices (N, 8), weight (N, 8) -> output features (N,
 // c)
 template <typename scalar_t>
@@ -13,11 +18,10 @@ __global__ void devoxelize_forward_kernel(int N, int c,
                                           const scalar_t *__restrict__ weight,
                                           const scalar_t *__restrict__ feat,
                                           scalar_t *__restrict__ out) {
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  int i = index / c;
-  int j = index % c;
+  int i = blockIdx.y;
+  int j = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if (i < N) {
+  if (i < N && j < c) {
     const int *indices_ = indices + 8 * i;
     const scalar_t *weight_ = weight + 8 * i;
     const scalar_t *feat_ = feat + j;
@@ -38,11 +42,10 @@ __global__ void devoxelize_backward_kernel(
     int N, int n, int c, const int *__restrict__ indices,
     const scalar_t *__restrict__ weight, const scalar_t *__restrict__ top_grad,
     scalar_t *__restrict__ bottom_grad) {
-  int index = blockIdx.x * blockDim.x + threadIdx.x;
-  int i = index / c;
-  int j = index % c;
+  int i = blockIdx.y;
+  int j = blockIdx.x * blockDim.x + threadIdx.x;
 
-  if (i < N) {
+  if (i < N && j < c) {
     const int *indices_ = indices + 8 * i;
     const scalar_t *weight_ = weight + 8 * i;
 
@@ -67,9 +70,12 @@ at::Tensor devoxelize_forward_cuda(const at::Tensor feat,
   at::Tensor out =
       torch::zeros({N, c}, at::device(feat.device()).dtype(feat.dtype()));
 
+  dim3 blocks(DIVUP(c, THREADS_PER_BLOCK), N);
+  dim3 threads(THREADS_PER_BLOCK);
+
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       feat.type(), "devoxelize_forward_cuda", ([&] {
-        devoxelize_forward_kernel<scalar_t><<<N, c>>>(
+        devoxelize_forward_kernel<scalar_t><<<blocks, threads>>>(
             N, c, indices.data_ptr<int>(), weight.data_ptr<scalar_t>(),
             feat.data_ptr<scalar_t>(), out.data_ptr<scalar_t>());
       }));
@@ -84,12 +90,16 @@ at::Tensor devoxelize_backward_cuda(const at::Tensor top_grad,
                                     const at::Tensor weight, int n) {
   int c = top_grad.size(1);
   int N = top_grad.size(0);
+
+  dim3 blocks(DIVUP(c, THREADS_PER_BLOCK), N);
+  dim3 threads(THREADS_PER_BLOCK);
+
   at::Tensor bottom_grad = torch::zeros(
       {n, c}, at::device(top_grad.device()).dtype(top_grad.dtype()));
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       top_grad.type(), "devoxelize_backward_cuda", ([&] {
-        devoxelize_backward_kernel<scalar_t><<<N, c>>>(
+        devoxelize_backward_kernel<scalar_t><<<blocks, threads>>>(
             N, n, c, indices.data_ptr<int>(), weight.data_ptr<scalar_t>(),
             top_grad.data_ptr<scalar_t>(), bottom_grad.data_ptr<scalar_t>());
       }));

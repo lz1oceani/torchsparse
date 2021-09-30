@@ -129,6 +129,10 @@ def conv3d(input: SparseTensor,
 
             kmap = [nbmaps, nbsizes, (feats.shape[0], coords.shape[0])]
             input.kmaps[(input.stride, kernel_size, stride, dilation)] = kmap
+        else:
+            if any(s > 1 for s in stride):
+                coords = F.spdownsample(coords, stride, kernel_size,
+                                        input.stride)
 
         feats = ConvolutionFunction.apply(feats, weight, kmap[0], kmap[1],
                                           kmap[2], transposed)
