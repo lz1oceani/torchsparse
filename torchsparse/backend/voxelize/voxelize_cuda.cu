@@ -6,7 +6,7 @@
 #include <cmath>
 
 
-#define THREADS_PER_BLOCK 512
+#define THREADS_PER_BLOCK 256
 #define DIVUP(m, n) ((m) / (n) + ((m) % (n) > 0))
 
 // hashing
@@ -18,9 +18,9 @@ __global__ void voxelize_forward_kernel(int N, int c, int s,
                                         const int *__restrict__ idx,
                                         const int *__restrict__ counts,
                                         scalar_t *__restrict__ out) {
-  int i = blockIdx.y;
-  int j = blockIdx.x * blockDim.x + threadIdx.x;
-
+  int i = blockIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  
   if (i < N && j < c) {
     int pos = idx[i];
     if (pos < 0 || pos >= s || counts[pos] == 0) return;
@@ -34,9 +34,9 @@ __global__ void voxelize_backward_kernel(int N, int c, int s,
                                          const int *__restrict__ idx,
                                          const int *__restrict__ counts,
                                          scalar_t *__restrict__ bottom_grad) {
-  int i = blockIdx.y;
-  int j = blockIdx.x * blockDim.x + threadIdx.x;
-
+  int i = blockIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
+  
   if (i < N && j < c) {
     int pos = idx[i];
     if (pos < 0 || pos >= s || counts[pos] == 0) return;
@@ -51,11 +51,15 @@ at::Tensor voxelize_forward_cuda(const at::Tensor inputs, const at::Tensor idx,
   int c = inputs.size(1);
   int N1 = counts.size(0);
 
-  dim3 blocks(DIVUP(c, THREADS_PER_BLOCK), N);
-  dim3 threads(THREADS_PER_BLOCK);
+  dim3 blocks(N, DIVUP(c, THREADS_PER_BLOCK));
+  int max_mum_thread = c <= THREADS_PER_BLOCK ? c : THREADS_PER_BLOCK;
+  dim3 threads(1, max_mum_thread);
 
   at::Tensor out =
       torch::zeros({N1, c}, at::device(idx.device()).dtype(inputs.dtype()));
+  
+  // printf("%d %d %d\n", THREADS_PER_BLOCK, DIVUP(c, THREADS_PER_BLOCK), N); 
+  // return out;
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       inputs.type(), "voxelize_forward_cuda", ([&] {
@@ -72,9 +76,10 @@ at::Tensor voxelize_backward_cuda(const at::Tensor top_grad,
                                   const int N) {
   int c = top_grad.size(1);
   int N1 = counts.size(0);
-
-  dim3 blocks(DIVUP(c, THREADS_PER_BLOCK), N);
-  dim3 threads(THREADS_PER_BLOCK);
+  
+  dim3 blocks(N, DIVUP(c, THREADS_PER_BLOCK));
+  int max_mum_thread = c <= THREADS_PER_BLOCK ? c : THREADS_PER_BLOCK;
+  dim3 threads(1, max_mum_thread);
 
   at::Tensor bottom_grad =
       torch::zeros({N, c}, at::device(idx.device()).dtype(top_grad.dtype()));

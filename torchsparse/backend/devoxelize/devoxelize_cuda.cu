@@ -18,8 +18,8 @@ __global__ void devoxelize_forward_kernel(int N, int c,
                                           const scalar_t *__restrict__ weight,
                                           const scalar_t *__restrict__ feat,
                                           scalar_t *__restrict__ out) {
-  int i = blockIdx.y;
-  int j = blockIdx.x * blockDim.x + threadIdx.x;
+  int i = blockIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
 
   if (i < N && j < c) {
     const int *indices_ = indices + 8 * i;
@@ -42,8 +42,8 @@ __global__ void devoxelize_backward_kernel(
     int N, int n, int c, const int *__restrict__ indices,
     const scalar_t *__restrict__ weight, const scalar_t *__restrict__ top_grad,
     scalar_t *__restrict__ bottom_grad) {
-  int i = blockIdx.y;
-  int j = blockIdx.x * blockDim.x + threadIdx.x;
+  int i = blockIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
 
   if (i < N && j < c) {
     const int *indices_ = indices + 8 * i;
@@ -67,11 +67,12 @@ at::Tensor devoxelize_forward_cuda(const at::Tensor feat,
   int c = feat.size(1);
   int N = indices.size(0);
 
+  dim3 blocks(N, DIVUP(c, THREADS_PER_BLOCK));
+  int max_mum_thread = c <= THREADS_PER_BLOCK ? c : THREADS_PER_BLOCK;
+  dim3 threads(1, max_mum_thread);
+
   at::Tensor out =
       torch::zeros({N, c}, at::device(feat.device()).dtype(feat.dtype()));
-
-  dim3 blocks(DIVUP(c, THREADS_PER_BLOCK), N);
-  dim3 threads(THREADS_PER_BLOCK);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       feat.type(), "devoxelize_forward_cuda", ([&] {
@@ -91,8 +92,9 @@ at::Tensor devoxelize_backward_cuda(const at::Tensor top_grad,
   int c = top_grad.size(1);
   int N = top_grad.size(0);
 
-  dim3 blocks(DIVUP(c, THREADS_PER_BLOCK), N);
-  dim3 threads(THREADS_PER_BLOCK);
+  dim3 blocks(N, DIVUP(c, THREADS_PER_BLOCK));
+  int max_mum_thread = c <= THREADS_PER_BLOCK ? c : THREADS_PER_BLOCK;
+  dim3 threads(1, max_mum_thread);
 
   at::Tensor bottom_grad = torch::zeros(
       {n, c}, at::device(top_grad.device()).dtype(top_grad.dtype()));

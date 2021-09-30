@@ -15,6 +15,7 @@ class VoxelizeFunction(Function):
                 counts: torch.Tensor) -> torch.Tensor:
         feats = feats.contiguous()
         coords = coords.contiguous().int()
+        counts = counts.contiguous()
 
         if feats.device.type == 'cuda':
             output = torchsparse.backend.voxelize_forward_cuda(
