@@ -22,10 +22,13 @@ def spdownsample(
                                  dtype=torch.int,
                                  device=coords.device).unsqueeze(dim=0)
 
+    """
     if all(stride[k] in [1, kernel_size[k]] for k in range(3)):
-        coords = coords.clone()
-        coords[:, :3] = torch.div(
-            coords[:, :3], sample_stride, rounding_mode='trunc') * sample_stride
+    """
+    coords = coords.clone()
+    coords[:, :3] = torch.div(
+        coords[:, :3], sample_stride, rounding_mode='trunc') * sample_stride
+    """
     else:
         offsets = get_kernel_offsets(kernel_size,
                                      tensor_stride,
@@ -43,6 +46,7 @@ def spdownsample(
         mask &= (coords[:, :3] >= coords_min)
         mask = torch.all(mask, dim=1)
         coords = coords[mask]
+    """
 
     # This makes sure that the points will be ordered with respect to the batch
     # index, but this will not affect the correctness of the result.
