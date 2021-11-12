@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ATen/ATen.h>
 #include <torch/torch.h>
 
 at::Tensor hash_cuda(const at::Tensor idx);

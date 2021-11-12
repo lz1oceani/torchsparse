@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ATen/ATen.h>
 #include <torch/torch.h>
 
 at::Tensor voxelize_forward_cuda(const at::Tensor inputs, const at::Tensor idx,

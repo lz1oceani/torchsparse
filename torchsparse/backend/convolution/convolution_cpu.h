@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ATen/ATen.h>
 #include <torch/torch.h>
 
 void convolution_forward_cpu(at::Tensor in_feat, at::Tensor out_feat,
