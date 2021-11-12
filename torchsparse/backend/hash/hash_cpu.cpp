@@ -1,7 +1,7 @@
 #include "hash_cpu.h"
 
 #include <torch/torch.h>
-
+#include <ATen/ATen.h>
 #include <vector>
 
 void cpu_hash_wrapper(int N, const int *data, int64_t *out) {

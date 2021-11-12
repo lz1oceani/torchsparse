@@ -7,6 +7,7 @@
 #include <google/dense_hash_map>
 #include <vector>
 
+
 class HashTableCPU {
  private:
   google::dense_hash_map<int64_t, int64_t> hashmap;

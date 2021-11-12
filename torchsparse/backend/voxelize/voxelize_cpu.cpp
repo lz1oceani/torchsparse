@@ -1,6 +1,7 @@
 #include "voxelize_cpu.h"
 
 #include <torch/torch.h>
+#include <ATen/ATen.h>
 
 #include <vector>
 

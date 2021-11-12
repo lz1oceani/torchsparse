@@ -1,6 +1,8 @@
 #include <pybind11/pybind11.h>
 #include <torch/extension.h>
+#include <torch/torch.h>
 #include <torch/serialize/tensor.h>
+#include <ATen/ATen.h>
 
 #include "convolution/convolution_cpu.h"
 #include "convolution/convolution_cuda.h"

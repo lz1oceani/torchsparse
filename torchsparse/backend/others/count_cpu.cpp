@@ -1,7 +1,7 @@
 #include "count_cpu.h"
 
 #include <torch/torch.h>
-
+#include <ATen/ATen.h>
 #include <vector>
 
 at::Tensor count_cpu(const at::Tensor idx, const int s) {

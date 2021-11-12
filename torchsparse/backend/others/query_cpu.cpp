@@ -1,6 +1,7 @@
 #include "query_cpu.h"
 
 #include <torch/torch.h>
+#include <ATen/ATen.h>
 
 #include <cmath>
 #include <google/dense_hash_map>

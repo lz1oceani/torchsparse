@@ -1,8 +1,10 @@
 #include <torch/torch.h>
+#include <ATen/ATen.h>
 
 #include <cmath>
 #include <iostream>
 #include <vector>
+
 
 #include "../hashmap/hashmap_cuda.cuh"
 

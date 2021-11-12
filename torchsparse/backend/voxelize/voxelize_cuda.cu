@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <torch/torch.h>
+#include <ATen/ATen.h>
 
 #include <THC/THCAtomics.cuh>
 #include <cmath>

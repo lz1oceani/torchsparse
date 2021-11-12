@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <thrust/device_vector.h>
 #include <torch/extension.h>
+#include <ATen/ATen.h>
 
 #include <THC/THCAtomics.cuh>
 

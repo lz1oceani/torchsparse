@@ -1,6 +1,8 @@
 #include "convolution_cpu.h"
 
 #include <torch/extension.h>
+#include <ATen/ATen.h>
+#include <ATen/NativeFunctions.h>
 
 #include <algorithm>
 #include <chrono>

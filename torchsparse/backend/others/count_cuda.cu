@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <torch/torch.h>
 
+#include <ATen/ATen.h>
 #include <cmath>
 #include <vector>
 
