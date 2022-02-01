@@ -6,8 +6,7 @@ from torchsparse.nn.utils import fapply
 import torch.nn.functional as F
 from torch.nn.modules.batchnorm import _NormBase
 
-__all__ = ['BatchNorm', 'GroupNorm', 'SyncBatchNorm']
-
+__all__ = ['BatchNorm', 'GroupNorm', 'SyncBatchNorm', 'LayerNorm']
 
 
 class BatchNorm(_NormBase):
@@ -129,3 +128,14 @@ class GroupNorm(nn.GroupNorm):
         output.cmaps = input.cmaps
         output.kmaps = input.kmaps
         return output
+
+
+class LayerNorm(nn.LayerNorm):
+    def forward(self, input: SparseTensor) -> SparseTensor:
+        coords, feats, stride = input.coords, input.feats, input.stride
+        out_feats = super(LayerNorm, self).forward(feats.tranpose(1, 2).contiguous()).tranpose(1, 2).contiguous()
+        output = SparseTensor(coords=coords, feats=out_feats, stride=stride)
+        output.cmaps = input.cmaps
+        output.kmaps = input.kmaps
+        return output
+
