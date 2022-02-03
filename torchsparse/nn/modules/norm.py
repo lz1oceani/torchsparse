@@ -133,7 +133,7 @@ class GroupNorm(nn.GroupNorm):
 class LayerNorm(nn.LayerNorm):
     def forward(self, input: SparseTensor) -> SparseTensor:
         coords, feats, stride = input.coords, input.feats, input.stride
-        out_feats = super(LayerNorm, self).forward(feats.transpose(1, 2).contiguous()).transpose(1, 2).contiguous()
+        out_feats = super(LayerNorm, self).forward(feats)
         output = SparseTensor(coords=coords, feats=out_feats, stride=stride)
         output.cmaps = input.cmaps
         output.kmaps = input.kmaps
